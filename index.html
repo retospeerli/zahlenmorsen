@@ -37,6 +37,16 @@
             </label>
 
             <label class="mode-option">
+              <input type="radio" name="appMode" value="practice_digit_audio_input" />
+              <span>Uebung: Ziffer hoeren und eingeben</span>
+            </label>
+
+            <label class="mode-option">
+              <input type="radio" name="appMode" value="practice_number_audio_input" />
+              <span>Uebung: Zahl hoeren und eingeben</span>
+            </label>
+
+            <label class="mode-option">
               <input type="radio" name="appMode" value="exam_number" />
               <span>Pruefung: gezeigte Zahl morsen</span>
             </label>
@@ -48,7 +58,8 @@
 
             <div class="info-box">
               <p><strong>Freies Morsen:</strong> Die App schreibt mit, was sie versteht.</p>
-              <p><strong>Ziffern / Zahlen:</strong> Die App zeigt eine Aufgabe. Du morst die Loesung.</p>
+              <p><strong>Ziffern / Zahlen morsen:</strong> Die App zeigt eine Aufgabe. Du morst die Loesung.</p>
+              <p><strong>Ziffern / Zahlen hoeren:</strong> Die App spielt Morse vor. Du gibst die Antwort unten per Zahlenfeld ein.</p>
               <p><strong>Subtraktion:</strong> Rechne zuerst im Kopf und morse dann das Resultat.</p>
             </div>
           </div>
@@ -112,16 +123,37 @@
           <div class="card input-card">
             <p class="label">Deine Eingabe</p>
 
-            <div id="livePattern" class="live-pattern">–</div>
-            <div id="liveDecode" class="live-decode">…</div>
+            <div id="morseInputArea">
+              <div id="livePattern" class="live-pattern">–</div>
+              <div id="liveDecode" class="live-decode">…</div>
 
-            <button id="morseKey" class="morse-key" aria-label="Morsetaste">
-              Druecken und halten
-            </button>
+              <button id="morseKey" class="morse-key" aria-label="Morsetaste">
+                Druecken und halten
+              </button>
 
-            <div class="legend">
-              <div><strong>Leertaste</strong> oder Taste am Bildschirm</div>
-              <div><strong>Kurz</strong> = Punkt · &nbsp; <strong>Lang</strong> = Strich −</div>
+              <div class="legend">
+                <div><strong>Leertaste</strong> oder Taste am Bildschirm</div>
+                <div><strong>Kurz</strong> = Punkt · &nbsp; <strong>Lang</strong> = Strich −</div>
+              </div>
+            </div>
+
+            <div id="audioInputArea" class="hidden">
+              <div id="audioAnswerDisplay" class="audio-answer-display">–</div>
+
+              <div class="number-pad" id="numberPad">
+                <button type="button" class="pad-btn" data-digit="1">1</button>
+                <button type="button" class="pad-btn" data-digit="2">2</button>
+                <button type="button" class="pad-btn" data-digit="3">3</button>
+                <button type="button" class="pad-btn" data-digit="4">4</button>
+                <button type="button" class="pad-btn" data-digit="5">5</button>
+                <button type="button" class="pad-btn" data-digit="6">6</button>
+                <button type="button" class="pad-btn" data-digit="7">7</button>
+                <button type="button" class="pad-btn" data-digit="8">8</button>
+                <button type="button" class="pad-btn" data-digit="9">9</button>
+                <button type="button" class="pad-btn pad-wide ghost-pad-btn" id="padClearBtn">Loeschen</button>
+                <button type="button" class="pad-btn" data-digit="0">0</button>
+                <button type="button" class="pad-btn pad-wide secondary-pad-btn" id="padCheckBtn">Pruefen</button>
+              </div>
             </div>
           </div>
         </div>
@@ -133,7 +165,7 @@
 
         <div class="grid three">
           <div class="card stat-card">
-            <p class="label">Erkannt</p>
+            <p class="label">Erkannt / Eingabe</p>
             <div id="recognizedText" class="result-text">–</div>
           </div>
           <div class="card stat-card">
