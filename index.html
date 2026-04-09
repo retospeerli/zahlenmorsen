@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Morse-App Zahlen</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app">
+    <header class="app-header">
+      <h1>Morse-App Zahlen</h1>
+      <p class="subtitle">Ziffern, Zahlen und Rechnen mit echter Morsetaste</p>
+    </header>
+
+    <main>
+      <section id="setupScreen" class="panel">
+        <h2>Start</h2>
+
+        <div class="grid two">
+          <div class="card">
+            <h3>Modus</h3>
+
+            <label class="mode-option">
+              <input type="radio" name="appMode" value="practice_free" checked />
+              <span>Uebung: freies Morsen</span>
+            </label>
+
+            <label class="mode-option">
+              <input type="radio" name="appMode" value="practice_digit" />
+              <span>Uebung: einzelne Ziffer morsen</span>
+            </label>
+
+            <label class="mode-option">
+              <input type="radio" name="appMode" value="practice_number" />
+              <span>Uebung: ganze Zahl morsen</span>
+            </label>
+
+            <label class="mode-option">
+              <input type="radio" name="appMode" value="exam_number" />
+              <span>Pruefung: gezeigte Zahl morsen</span>
+            </label>
+
+            <label class="mode-option">
+              <input type="radio" name="appMode" value="exam_subtraction" />
+              <span>Pruefung: Subtraktion loesen und Resultat morsen</span>
+            </label>
+
+            <div class="info-box">
+              <p><strong>Freies Morsen:</strong> Die App schreibt mit, was sie versteht.</p>
+              <p><strong>Ziffern / Zahlen:</strong> Die App zeigt eine Aufgabe. Du morst die Loesung.</p>
+              <p><strong>Subtraktion:</strong> Rechne zuerst im Kopf und morse dann das Resultat.</p>
+            </div>
+          </div>
+
+          <div class="card">
+            <h3>Einstellungen</h3>
+
+            <div id="numberConfig">
+              <label class="setting">
+                <span>Laenge der Zahl: <strong id="numberLengthLabel">3</strong></span>
+                <input id="numberLengthSlider" type="range" min="2" max="4" step="1" value="3" />
+              </label>
+            </div>
+
+            <label class="setting">
+              <span>Geschwindigkeit (Punktdauer): <strong id="unitLabel">140 ms</strong></span>
+              <input id="unitSlider" type="range" min="80" max="260" step="10" value="140" />
+            </label>
+
+            <label class="setting">
+              <span>Tonhoehe: <strong id="freqLabel">650 Hz</strong></span>
+              <input id="freqSlider" type="range" min="300" max="1000" step="10" value="650" />
+            </label>
+
+            <label class="setting">
+              <span>Toleranz: <strong id="toleranceLabel">mittel</strong></span>
+              <input id="toleranceSlider" type="range" min="0" max="2" step="1" value="1" />
+            </label>
+
+            <button id="startBtn" class="primary-btn">App starten</button>
+          </div>
+        </div>
+      </section>
+
+      <section id="appScreen" class="panel hidden">
+        <div class="top-bar">
+          <div>
+            <h2 id="screenTitle">Training</h2>
+            <p id="screenInfo" class="small-text"></p>
+          </div>
+          <button id="backBtn" class="ghost-btn">Zurueck</button>
+        </div>
+
+        <div class="grid two training-grid">
+          <div class="card target-card">
+            <p class="label">Aufgabe</p>
+            <div id="targetText" class="target-text">123</div>
+
+            <div class="target-actions">
+              <button id="playBtn" class="secondary-btn">Vorspielen</button>
+              <button id="clearBtn" class="ghost-btn">Eingabe loeschen</button>
+              <button id="finishBtn" class="secondary-btn">Ueberpruefen</button>
+              <button id="nextBtn" class="secondary-btn">Neue Aufgabe</button>
+            </div>
+
+            <div class="morse-hint">
+              <p id="hintText" class="small-text"></p>
+            </div>
+          </div>
+
+          <div class="card input-card">
+            <p class="label">Deine Eingabe</p>
+
+            <div id="livePattern" class="live-pattern">–</div>
+            <div id="liveDecode" class="live-decode">…</div>
+
+            <button id="morseKey" class="morse-key" aria-label="Morsetaste">
+              Druecken und halten
+            </button>
+
+            <div class="legend">
+              <div><strong>Leertaste</strong> oder Taste am Bildschirm</div>
+              <div><strong>Kurz</strong> = Punkt · &nbsp; <strong>Lang</strong> = Strich −</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card feedback-card">
+          <p class="label">Rueckmeldung</p>
+          <div id="feedback" class="feedback neutral">Noch keine Eingabe.</div>
+        </div>
+
+        <div class="grid three">
+          <div class="card stat-card">
+            <p class="label">Erkannt</p>
+            <div id="recognizedText" class="result-text">–</div>
+          </div>
+          <div class="card stat-card">
+            <p class="label">Zeichen</p>
+            <div id="charCount" class="stat-value">0</div>
+          </div>
+          <div class="card stat-card">
+            <p class="label">Status</p>
+            <div id="statusText" class="result-text">Bereit</div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
