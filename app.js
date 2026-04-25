@@ -39,6 +39,13 @@ const clearBtn = document.getElementById("clearBtn");
 const finishBtn = document.getElementById("finishBtn");
 const nextBtn = document.getElementById("nextBtn");
 
+const morseInputArea = document.getElementById("morseInputArea");
+const audioInputArea = document.getElementById("audioInputArea");
+const audioAnswerDisplay = document.getElementById("audioAnswerDisplay");
+const numberPad = document.getElementById("numberPad");
+const padClearBtn = document.getElementById("padClearBtn");
+const padCheckBtn = document.getElementById("padCheckBtn");
+
 const morseKey = document.getElementById("morseKey");
 const livePattern = document.getElementById("livePattern");
 const liveDecode = document.getElementById("liveDecode");
@@ -48,12 +55,21 @@ const recognizedTextEl = document.getElementById("recognizedText");
 const charCountEl = document.getElementById("charCount");
 const statusTextEl = document.getElementById("statusText");
 
+const chooseKeyBtn = document.getElementById("chooseKeyBtn");
+const currentKeyLabel = document.getElementById("currentKeyLabel");
+const currentKeyLabel2 = document.getElementById("currentKeyLabel2");
+
 let appMode = "practice_free";
 let expectedText = "";
 let recognizedChars = [];
 let currentInputSymbols = "";
 let currentTaskLabel = "";
 let currentSubtraction = null;
+let keypadInput = "";
+
+let morseKeyCode = "Space";
+let morseKeyLabel = "Leertaste";
+let waitingForKeyChoice = false;
 
 let audioCtx = null;
 let oscillator = null;
@@ -74,6 +90,7 @@ function init() {
   updateModeFromRadios();
   setupEventListeners();
   updateStartUI();
+  updateMorseKeyLabels();
   resetAppState();
 }
 
@@ -88,6 +105,12 @@ function setupEventListeners() {
       updateModeFromRadios();
       updateStartUI();
     });
+  });
+
+  chooseKeyBtn.addEventListener("click", () => {
+    waitingForKeyChoice = true;
+    updateMorseKeyLabels("naechste Taste druecken ...");
+    setFeedback("Druecke jetzt die Taste, die als Morsetaste dienen soll.", "neutral");
   });
 
   startBtn.addEventListener("click", startApp);
@@ -117,7 +140,35 @@ function setupEventListeners() {
   });
 
   document.addEventListener("keydown", (e) => {
-    if (e.code === "Space") {
+    if (waitingForKeyChoice) {
+      e.preventDefault();
+
+      morseKeyCode = e.code;
+      morseKeyLabel = getReadableKeyName(e);
+      waitingForKeyChoice = false;
+
+      updateMorseKeyLabels();
+      setFeedback(`Morsetaste festgelegt: ${morseKeyLabel}`, "success");
+      return;
+    }
+
+    if (isAudioInputMode()) {
+      if (/^[0-9]$/.test(e.key)) {
+        e.preventDefault();
+        appendKeypadDigit(e.key);
+      }
+      if (e.key === "Backspace") {
+        e.preventDefault();
+        clearKeypadInput();
+      }
+      if (e.key === "Enter") {
+        e.preventDefault();
+        finishAttempt();
+      }
+      return;
+    }
+
+    if (e.code === morseKeyCode) {
       e.preventDefault();
       if (!appScreen.classList.contains("hidden") && !e.repeat) {
         handlePressStart();
@@ -126,7 +177,9 @@ function setupEventListeners() {
   });
 
   document.addEventListener("keyup", (e) => {
-    if (e.code === "Space") {
+    if (isAudioInputMode()) return;
+
+    if (e.code === morseKeyCode) {
       e.preventDefault();
       if (!appScreen.classList.contains("hidden")) {
         handlePressEnd();
@@ -137,6 +190,30 @@ function setupEventListeners() {
   window.addEventListener("blur", () => {
     if (isPressing) handlePressEnd();
   });
+
+  numberPad.addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-digit]");
+    if (!btn) return;
+    appendKeypadDigit(btn.dataset.digit);
+  });
+
+  padClearBtn.addEventListener("click", clearKeypadInput);
+  padCheckBtn.addEventListener("click", finishAttempt);
+}
+
+function getReadableKeyName(e) {
+  if (e.code === "Space") return "Leertaste";
+  if (e.code.startsWith("Key")) return e.code.replace("Key", "");
+  if (e.code.startsWith("Digit")) return e.code.replace("Digit", "");
+  if (e.code.startsWith("Numpad")) return "Num " + e.code.replace("Numpad", "");
+  if (e.key && e.key.length === 1) return e.key.toUpperCase();
+  return e.key || e.code;
+}
+
+function updateMorseKeyLabels(customText) {
+  const text = customText || morseKeyLabel;
+  currentKeyLabel.textContent = text;
+  currentKeyLabel2.textContent = text;
 }
 
 function updateModeFromRadios() {
@@ -144,9 +221,20 @@ function updateModeFromRadios() {
   appMode = checked ? checked.value : "practice_free";
 }
 
+function isAudioInputMode() {
+  return appMode === "practice_digit_audio_input" || appMode === "practice_number_audio_input";
+}
+
+function isMorseMode() {
+  return !isAudioInputMode();
+}
+
 function updateStartUI() {
   const showLength =
-    appMode === "practice_number" || appMode === "exam_number";
+    appMode === "practice_number" ||
+    appMode === "exam_number" ||
+    appMode === "practice_number_audio_input";
+
   document.getElementById("numberConfig").style.display = showLength ? "block" : "none";
 }
 
@@ -176,8 +264,10 @@ function getNumberLength() {
 function resetAppState() {
   recognizedChars = [];
   currentInputSymbols = "";
+  keypadInput = "";
   livePattern.textContent = "–";
   liveDecode.textContent = "…";
+  audioAnswerDisplay.textContent = "–";
   recognizedTextEl.textContent = "–";
   charCountEl.textContent = "0";
   statusTextEl.textContent = "Bereit";
@@ -186,7 +276,15 @@ function resetAppState() {
 
 function clearCurrentAttempt() {
   clearLetterTimer();
-  resetAppState();
+  recognizedChars = [];
+  currentInputSymbols = "";
+  keypadInput = "";
+  livePattern.textContent = "–";
+  liveDecode.textContent = "…";
+  audioAnswerDisplay.textContent = "–";
+  recognizedTextEl.textContent = "–";
+  charCountEl.textContent = "0";
+  setFeedback("Eingabe geloescht.", "neutral");
 }
 
 function setFeedback(text, type = "neutral") {
@@ -199,6 +297,31 @@ function updateRecognizedUI() {
   recognizedTextEl.textContent = text || "–";
   charCountEl.textContent = String(text.length);
   liveDecode.textContent = text || "…";
+}
+
+function updateKeypadUI() {
+  audioAnswerDisplay.textContent = keypadInput || "–";
+  recognizedTextEl.textContent = keypadInput || "–";
+  charCountEl.textContent = String(keypadInput.length);
+}
+
+function appendKeypadDigit(digit) {
+  if (!isAudioInputMode()) return;
+
+  const maxLen = expectedText.length || 4;
+  if (keypadInput.length >= maxLen) return;
+
+  keypadInput += digit;
+  updateKeypadUI();
+  setFeedback(`Eingabe: ${keypadInput}`, "neutral");
+}
+
+function clearKeypadInput() {
+  if (!isAudioInputMode()) return;
+
+  keypadInput = "";
+  updateKeypadUI();
+  setFeedback("Eingabe geloescht.", "neutral");
 }
 
 function patternToChar(pattern) {
@@ -227,8 +350,8 @@ function randomNumberString(length) {
 }
 
 function generateSubtractionTask() {
-  const a = Math.floor(Math.random() * 900) + 100; // 100-999
-  const b = Math.floor(Math.random() * (a + 1));   // 0-a
+  const a = Math.floor(Math.random() * 900) + 100;
+  const b = Math.floor(Math.random() * (a + 1));
   const result = a - b;
 
   return {
@@ -273,6 +396,28 @@ function configureTask() {
     return;
   }
 
+  if (appMode === "practice_digit_audio_input") {
+    expectedText = randomDigit();
+    currentTaskLabel = "?";
+    screenTitle.textContent = "Uebung: Ziffer hoeren";
+    screenInfo.textContent = "Hoere die Ziffer und gib sie unten per Zahlenfeld ein.";
+    hintText.textContent = "Mit Vorspielen kannst du die Morsefolge erneut anhoeren.";
+    statusTextEl.textContent = "Ziffer hoeren";
+    targetText.textContent = currentTaskLabel;
+    return;
+  }
+
+  if (appMode === "practice_number_audio_input") {
+    expectedText = randomNumberString(getNumberLength());
+    currentTaskLabel = "?";
+    screenTitle.textContent = "Uebung: Zahl hoeren";
+    screenInfo.textContent = "Hoere die Zahl und gib sie unten per Zahlenfeld ein.";
+    hintText.textContent = "Mit Vorspielen kannst du die Morsefolge erneut anhoeren.";
+    statusTextEl.textContent = "Zahl hoeren";
+    targetText.textContent = currentTaskLabel;
+    return;
+  }
+
   if (appMode === "exam_number") {
     expectedText = randomNumberString(getNumberLength());
     currentTaskLabel = expectedText;
@@ -296,27 +441,57 @@ function configureTask() {
   }
 }
 
+function updateInputModeUI() {
+  if (isAudioInputMode()) {
+    morseInputArea.classList.add("hidden");
+    audioInputArea.classList.remove("hidden");
+    toleranceSlider.disabled = true;
+    toleranceSlider.style.opacity = "0.5";
+  } else {
+    morseInputArea.classList.remove("hidden");
+    audioInputArea.classList.add("hidden");
+    toleranceSlider.disabled = false;
+    toleranceSlider.style.opacity = "1";
+  }
+}
+
 function startApp() {
   updateModeFromRadios();
   resetAppState();
   configureTask();
+  updateInputModeUI();
 
   setupScreen.classList.add("hidden");
   appScreen.classList.remove("hidden");
 
   ensureAudio();
+
+  if (isAudioInputMode()) {
+    setTimeout(() => {
+      playTarget();
+    }, 250);
+  }
 }
 
 function newTask() {
   clearLetterTimer();
   resetAppState();
   configureTask();
+  updateInputModeUI();
+
+  if (isAudioInputMode()) {
+    setTimeout(() => {
+      playTarget();
+    }, 250);
+  }
 }
 
 function goBack() {
   stopTone();
   clearLetterTimer();
   isPressing = false;
+  waitingForKeyChoice = false;
+  updateMorseKeyLabels();
   setupScreen.classList.remove("hidden");
   appScreen.classList.add("hidden");
 }
@@ -395,8 +570,6 @@ async function playTarget() {
       return;
     }
     textToPlay = current;
-  } else if (appMode === "exam_subtraction") {
-    textToPlay = expectedText;
   } else {
     textToPlay = expectedText;
   }
@@ -408,6 +581,8 @@ async function playTarget() {
   clearBtn.disabled = true;
   nextBtn.disabled = true;
   morseKey.disabled = true;
+  numberPad.style.pointerEvents = "none";
+  numberPad.style.opacity = "0.6";
 
   const unit = getUnit();
 
@@ -430,10 +605,12 @@ async function playTarget() {
   clearBtn.disabled = false;
   nextBtn.disabled = false;
   morseKey.disabled = false;
+  numberPad.style.pointerEvents = "auto";
+  numberPad.style.opacity = "1";
 }
 
 function handlePressStart() {
-  if (isPressing) return;
+  if (isPressing || !isMorseMode()) return;
 
   ensureAudio();
   clearLetterTimer();
@@ -445,7 +622,7 @@ function handlePressStart() {
 }
 
 function handlePressEnd() {
-  if (!isPressing) return;
+  if (!isPressing || !isMorseMode()) return;
 
   isPressing = false;
   stopTone();
@@ -496,6 +673,11 @@ function finalizeCurrentChar() {
 }
 
 function finishAttempt() {
+  if (isAudioInputMode()) {
+    finishAudioInputAttempt();
+    return;
+  }
+
   clearLetterTimer();
 
   if (currentInputSymbols) {
@@ -536,6 +718,26 @@ function finishAttempt() {
 
   statusTextEl.textContent = "Nicht bestanden";
   setFeedback(`Nicht korrekt. Erkannt wurde: ${recognized}. Versuche es noch einmal.`, "error");
+}
+
+function finishAudioInputAttempt() {
+  const typed = keypadInput;
+
+  if (!typed) {
+    statusTextEl.textContent = "Keine Eingabe";
+    setFeedback("Bitte gib zuerst eine Zahl ein.", "warning");
+    return;
+  }
+
+  if (typed === expectedText) {
+    statusTextEl.textContent = "Richtig";
+    targetText.textContent = expectedText;
+    setFeedback(`Richtig! Gehoert wurde: ${expectedText}.`, "success");
+  } else {
+    statusTextEl.textContent = "Noch nicht richtig";
+    targetText.textContent = expectedText;
+    setFeedback(`Nicht richtig. Deine Eingabe: ${typed}. Gehoert wurde: ${expectedText}.`, "error");
+  }
 }
 
 init();
