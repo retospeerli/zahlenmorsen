@@ -59,7 +59,7 @@
             <div class="info-box">
               <p><strong>Freies Morsen:</strong> Die App schreibt mit, was sie versteht.</p>
               <p><strong>Ziffern / Zahlen morsen:</strong> Die App zeigt eine Aufgabe. Du morst die Loesung.</p>
-              <p><strong>Ziffern / Zahlen hoeren:</strong> Die App spielt Morse vor. Du gibst die Antwort unten per Zahlenfeld ein.</p>
+              <p><strong>Ziffern / Zahlen hoeren:</strong> Die App spielt Morse vor. Du gibst die Antwort per Zahlenfeld ein.</p>
               <p><strong>Subtraktion:</strong> Rechne zuerst im Kopf und morse dann das Resultat.</p>
             </div>
           </div>
@@ -132,8 +132,13 @@
               </button>
 
               <div class="legend">
-                <div><strong>Leertaste</strong> oder Taste am Bildschirm</div>
+                <div><strong id="currentKeyLabel">Leertaste</strong> oder Taste am Bildschirm</div>
                 <div><strong>Kurz</strong> = Punkt · &nbsp; <strong>Lang</strong> = Strich −</div>
+              </div>
+
+              <div class="key-select-box">
+                <button id="chooseKeyBtn" class="ghost-btn" type="button">Taste auswaehlen</button>
+                <span>Aktuelle Morsetaste: <strong id="currentKeyLabel2">Leertaste</strong></span>
               </div>
             </div>
 
