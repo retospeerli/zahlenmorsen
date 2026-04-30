@@ -10,7 +10,7 @@
   <div class="app">
     <header class="app-header">
       <h1>Morse-App Zahlen</h1>
-      <p class="subtitle">Ziffern, Zahlen und Rechnen mit echter Morsetaste</p>
+      <p class="subtitle">Ziffern, Zahlen, Punkt, Koordinaten und Rechnen</p>
     </header>
 
     <main>
@@ -21,46 +21,19 @@
           <div class="card">
             <h3>Modus</h3>
 
-            <label class="mode-option">
-              <input type="radio" name="appMode" value="practice_free" checked />
-              <span>Uebung: freies Morsen</span>
-            </label>
-
-            <label class="mode-option">
-              <input type="radio" name="appMode" value="practice_digit" />
-              <span>Uebung: einzelne Ziffer morsen</span>
-            </label>
-
-            <label class="mode-option">
-              <input type="radio" name="appMode" value="practice_number" />
-              <span>Uebung: ganze Zahl morsen</span>
-            </label>
-
-            <label class="mode-option">
-              <input type="radio" name="appMode" value="practice_digit_audio_input" />
-              <span>Uebung: Ziffer hoeren und eingeben</span>
-            </label>
-
-            <label class="mode-option">
-              <input type="radio" name="appMode" value="practice_number_audio_input" />
-              <span>Uebung: Zahl hoeren und eingeben</span>
-            </label>
-
-            <label class="mode-option">
-              <input type="radio" name="appMode" value="exam_number" />
-              <span>Pruefung: gezeigte Zahl morsen</span>
-            </label>
-
-            <label class="mode-option">
-              <input type="radio" name="appMode" value="exam_subtraction" />
-              <span>Pruefung: Subtraktion loesen und Resultat morsen</span>
-            </label>
+            <label class="mode-option"><input type="radio" name="appMode" value="practice_free" checked /> Freies Morsen</label>
+            <label class="mode-option"><input type="radio" name="appMode" value="practice_digit" /> Einzelne Ziffer morsen</label>
+            <label class="mode-option"><input type="radio" name="appMode" value="practice_number" /> Ganze Zahl morsen</label>
+            <label class="mode-option"><input type="radio" name="appMode" value="practice_coordinate" /> Koordinate morsen</label>
+            <label class="mode-option"><input type="radio" name="appMode" value="practice_digit_audio_input" /> Ziffer hören und eingeben</label>
+            <label class="mode-option"><input type="radio" name="appMode" value="practice_number_audio_input" /> Zahl hören und eingeben</label>
+            <label class="mode-option"><input type="radio" name="appMode" value="practice_coordinate_audio_input" /> Koordinate hören und eingeben</label>
+            <label class="mode-option"><input type="radio" name="appMode" value="exam_number" /> Prüfung: gezeigte Zahl morsen</label>
+            <label class="mode-option"><input type="radio" name="appMode" value="exam_subtraction" /> Prüfung: Subtraktion lösen und Resultat morsen</label>
 
             <div class="info-box">
-              <p><strong>Freies Morsen:</strong> Die App schreibt mit, was sie versteht.</p>
-              <p><strong>Ziffern / Zahlen morsen:</strong> Die App zeigt eine Aufgabe. Du morst die Loesung.</p>
-              <p><strong>Ziffern / Zahlen hoeren:</strong> Die App spielt Morse vor. Du gibst die Antwort per Zahlenfeld ein.</p>
-              <p><strong>Subtraktion:</strong> Rechne zuerst im Kopf und morse dann das Resultat.</p>
+              <p><strong>Koordinaten:</strong> enthalten Ziffern, Punkt und die Buchstaben N, E, S, W.</p>
+              <p><strong>Prüfung:</strong> Bei richtiger Lösung erscheint der Hinweis: Das Lösungswort wird gemorst: 8820.</p>
             </div>
           </div>
 
@@ -69,7 +42,7 @@
 
             <div id="numberConfig">
               <label class="setting">
-                <span>Laenge der Zahl: <strong id="numberLengthLabel">3</strong></span>
+                <span>Länge der Zahl: <strong id="numberLengthLabel">3</strong></span>
                 <input id="numberLengthSlider" type="range" min="2" max="4" step="1" value="3" />
               </label>
             </div>
@@ -80,7 +53,7 @@
             </label>
 
             <label class="setting">
-              <span>Tonhoehe: <strong id="freqLabel">650 Hz</strong></span>
+              <span>Tonhöhe: <strong id="freqLabel">650 Hz</strong></span>
               <input id="freqSlider" type="range" min="300" max="1000" step="10" value="650" />
             </label>
 
@@ -100,18 +73,18 @@
             <h2 id="screenTitle">Training</h2>
             <p id="screenInfo" class="small-text"></p>
           </div>
-          <button id="backBtn" class="ghost-btn">Zurueck</button>
+          <button id="backBtn" class="ghost-btn">Zurück</button>
         </div>
 
-        <div class="grid two training-grid">
-          <div class="card target-card">
+        <div class="grid two">
+          <div class="card">
             <p class="label">Aufgabe</p>
             <div id="targetText" class="target-text">123</div>
 
             <div class="target-actions">
               <button id="playBtn" class="secondary-btn">Vorspielen</button>
-              <button id="clearBtn" class="ghost-btn">Eingabe loeschen</button>
-              <button id="finishBtn" class="secondary-btn">Ueberpruefen</button>
+              <button id="clearBtn" class="ghost-btn">Eingabe löschen</button>
+              <button id="finishBtn" class="secondary-btn">Überprüfen</button>
               <button id="nextBtn" class="secondary-btn">Neue Aufgabe</button>
             </div>
 
@@ -120,24 +93,22 @@
             </div>
           </div>
 
-          <div class="card input-card">
+          <div class="card">
             <p class="label">Deine Eingabe</p>
 
             <div id="morseInputArea">
               <div id="livePattern" class="live-pattern">–</div>
               <div id="liveDecode" class="live-decode">…</div>
 
-              <button id="morseKey" class="morse-key" aria-label="Morsetaste">
-                Druecken und halten
-              </button>
+              <button id="morseKey" class="morse-key" aria-label="Morsetaste">Drücken und halten</button>
 
               <div class="legend">
                 <div><strong id="currentKeyLabel">Leertaste</strong> oder Taste am Bildschirm</div>
-                <div><strong>Kurz</strong> = Punkt · &nbsp; <strong>Lang</strong> = Strich −</div>
+                <div><strong>Kurz</strong> = Punkt · <strong>Lang</strong> = Strich −</div>
               </div>
 
               <div class="key-select-box">
-                <button id="chooseKeyBtn" class="ghost-btn" type="button">Taste auswaehlen</button>
+                <button id="chooseKeyBtn" class="ghost-btn" type="button">Taste auswählen</button>
                 <span>Aktuelle Morsetaste: <strong id="currentKeyLabel2">Leertaste</strong></span>
               </div>
             </div>
@@ -146,25 +117,30 @@
               <div id="audioAnswerDisplay" class="audio-answer-display">–</div>
 
               <div class="number-pad" id="numberPad">
-                <button type="button" class="pad-btn" data-digit="1">1</button>
-                <button type="button" class="pad-btn" data-digit="2">2</button>
-                <button type="button" class="pad-btn" data-digit="3">3</button>
-                <button type="button" class="pad-btn" data-digit="4">4</button>
-                <button type="button" class="pad-btn" data-digit="5">5</button>
-                <button type="button" class="pad-btn" data-digit="6">6</button>
-                <button type="button" class="pad-btn" data-digit="7">7</button>
-                <button type="button" class="pad-btn" data-digit="8">8</button>
-                <button type="button" class="pad-btn" data-digit="9">9</button>
-                <button type="button" class="pad-btn pad-wide ghost-pad-btn" id="padClearBtn">Loeschen</button>
-                <button type="button" class="pad-btn" data-digit="0">0</button>
-                <button type="button" class="pad-btn pad-wide secondary-pad-btn" id="padCheckBtn">Pruefen</button>
+                <button class="pad-btn" data-value="1">1</button>
+                <button class="pad-btn" data-value="2">2</button>
+                <button class="pad-btn" data-value="3">3</button>
+                <button class="pad-btn" data-value="4">4</button>
+                <button class="pad-btn" data-value="5">5</button>
+                <button class="pad-btn" data-value="6">6</button>
+                <button class="pad-btn" data-value="7">7</button>
+                <button class="pad-btn" data-value="8">8</button>
+                <button class="pad-btn" data-value="9">9</button>
+                <button class="pad-btn" data-value=".">.</button>
+                <button class="pad-btn" data-value="0">0</button>
+                <button class="pad-btn" data-value="N">N</button>
+                <button class="pad-btn" data-value="E">E</button>
+                <button class="pad-btn" data-value="S">S</button>
+                <button class="pad-btn" data-value="W">W</button>
+                <button class="pad-btn ghost-pad-btn" id="padClearBtn" type="button">Löschen</button>
+                <button class="pad-btn secondary-pad-btn" id="padCheckBtn" type="button">Prüfen</button>
               </div>
             </div>
           </div>
         </div>
 
         <div class="card feedback-card">
-          <p class="label">Rueckmeldung</p>
+          <p class="label">Rückmeldung</p>
           <div id="feedback" class="feedback neutral">Noch keine Eingabe.</div>
         </div>
 
