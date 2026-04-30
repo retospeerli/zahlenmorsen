@@ -8,10 +8,16 @@ const MORSE_MAP = {
   "6": "-....",
   "7": "--...",
   "8": "---..",
-  "9": "----."
+  "9": "----.",
+  ".": ".-.-.-",
+  "N": "-.",
+  "E": ".",
+  "S": "...",
+  "W": ".--"
 };
 
-const DIGITS = Object.keys(MORSE_MAP);
+const TASK_CHARS = Object.keys(MORSE_MAP);
+const DIGITS = ["0","1","2","3","4","5","6","7","8","9"];
 
 const setupScreen = document.getElementById("setupScreen");
 const appScreen = document.getElementById("appScreen");
@@ -61,10 +67,9 @@ const currentKeyLabel2 = document.getElementById("currentKeyLabel2");
 
 let appMode = "practice_free";
 let expectedText = "";
+let displayTask = "";
 let recognizedChars = [];
 let currentInputSymbols = "";
-let currentTaskLabel = "";
-let currentSubtraction = null;
 let keypadInput = "";
 
 let morseKeyCode = "Space";
@@ -82,15 +87,15 @@ let finalizeLetterTimer = null;
 const toleranceSettings = [
   { name: "streng", dotMaxFactor: 1.8, letterPauseFactor: 2.6 },
   { name: "mittel", dotMaxFactor: 2.2, letterPauseFactor: 3.0 },
-  { name: "grosszuegig", dotMaxFactor: 2.8, letterPauseFactor: 3.6 }
+  { name: "grosszügig", dotMaxFactor: 2.8, letterPauseFactor: 3.6 }
 ];
 
 function init() {
   updateLabels();
   updateModeFromRadios();
-  setupEventListeners();
   updateStartUI();
   updateMorseKeyLabels();
+  setupEventListeners();
   resetAppState();
 }
 
@@ -109,13 +114,12 @@ function setupEventListeners() {
 
   chooseKeyBtn.addEventListener("click", () => {
     waitingForKeyChoice = true;
-    updateMorseKeyLabels("naechste Taste druecken ...");
-    setFeedback("Druecke jetzt die Taste, die als Morsetaste dienen soll.", "neutral");
+    updateMorseKeyLabels("nächste Taste drücken ...");
+    setFeedback("Drücke jetzt die Taste, die als Morsetaste dienen soll.", "neutral");
   });
 
   startBtn.addEventListener("click", startApp);
   backBtn.addEventListener("click", goBack);
-
   playBtn.addEventListener("click", playTarget);
   clearBtn.addEventListener("click", clearCurrentAttempt);
   finishBtn.addEventListener("click", finishAttempt);
@@ -142,34 +146,36 @@ function setupEventListeners() {
   document.addEventListener("keydown", (e) => {
     if (waitingForKeyChoice) {
       e.preventDefault();
-
       morseKeyCode = e.code;
       morseKeyLabel = getReadableKeyName(e);
       waitingForKeyChoice = false;
-
       updateMorseKeyLabels();
       setFeedback(`Morsetaste festgelegt: ${morseKeyLabel}`, "success");
       return;
     }
 
     if (isAudioInputMode()) {
-      if (/^[0-9]$/.test(e.key)) {
+      if (/^[0-9]$/.test(e.key) || [".", "n", "e", "s", "w", "N", "E", "S", "W"].includes(e.key)) {
         e.preventDefault();
-        appendKeypadDigit(e.key);
+        appendKeypadValue(e.key.toUpperCase());
       }
+
       if (e.key === "Backspace") {
         e.preventDefault();
         clearKeypadInput();
       }
+
       if (e.key === "Enter") {
         e.preventDefault();
         finishAttempt();
       }
+
       return;
     }
 
     if (e.code === morseKeyCode) {
       e.preventDefault();
+
       if (!appScreen.classList.contains("hidden") && !e.repeat) {
         handlePressStart();
       }
@@ -181,6 +187,7 @@ function setupEventListeners() {
 
     if (e.code === morseKeyCode) {
       e.preventDefault();
+
       if (!appScreen.classList.contains("hidden")) {
         handlePressEnd();
       }
@@ -192,28 +199,13 @@ function setupEventListeners() {
   });
 
   numberPad.addEventListener("click", (e) => {
-    const btn = e.target.closest("[data-digit]");
+    const btn = e.target.closest("[data-value]");
     if (!btn) return;
-    appendKeypadDigit(btn.dataset.digit);
+    appendKeypadValue(btn.dataset.value);
   });
 
   padClearBtn.addEventListener("click", clearKeypadInput);
   padCheckBtn.addEventListener("click", finishAttempt);
-}
-
-function getReadableKeyName(e) {
-  if (e.code === "Space") return "Leertaste";
-  if (e.code.startsWith("Key")) return e.code.replace("Key", "");
-  if (e.code.startsWith("Digit")) return e.code.replace("Digit", "");
-  if (e.code.startsWith("Numpad")) return "Num " + e.code.replace("Numpad", "");
-  if (e.key && e.key.length === 1) return e.key.toUpperCase();
-  return e.key || e.code;
-}
-
-function updateMorseKeyLabels(customText) {
-  const text = customText || morseKeyLabel;
-  currentKeyLabel.textContent = text;
-  currentKeyLabel2.textContent = text;
 }
 
 function updateModeFromRadios() {
@@ -222,7 +214,9 @@ function updateModeFromRadios() {
 }
 
 function isAudioInputMode() {
-  return appMode === "practice_digit_audio_input" || appMode === "practice_number_audio_input";
+  return appMode === "practice_digit_audio_input" ||
+         appMode === "practice_number_audio_input" ||
+         appMode === "practice_coordinate_audio_input";
 }
 
 function isMorseMode() {
@@ -245,6 +239,21 @@ function updateLabels() {
   numberLengthLabel.textContent = numberLengthSlider.value;
 }
 
+function updateMorseKeyLabels(customText) {
+  const text = customText || morseKeyLabel;
+  currentKeyLabel.textContent = text;
+  currentKeyLabel2.textContent = text;
+}
+
+function getReadableKeyName(e) {
+  if (e.code === "Space") return "Leertaste";
+  if (e.code.startsWith("Key")) return e.code.replace("Key", "");
+  if (e.code.startsWith("Digit")) return e.code.replace("Digit", "");
+  if (e.code.startsWith("Numpad")) return "Num " + e.code.replace("Numpad", "");
+  if (e.key && e.key.length === 1) return e.key.toUpperCase();
+  return e.key || e.code;
+}
+
 function getUnit() {
   return Number(unitSlider.value);
 }
@@ -265,6 +274,7 @@ function resetAppState() {
   recognizedChars = [];
   currentInputSymbols = "";
   keypadInput = "";
+
   livePattern.textContent = "–";
   liveDecode.textContent = "…";
   audioAnswerDisplay.textContent = "–";
@@ -279,12 +289,13 @@ function clearCurrentAttempt() {
   recognizedChars = [];
   currentInputSymbols = "";
   keypadInput = "";
+
   livePattern.textContent = "–";
   liveDecode.textContent = "…";
   audioAnswerDisplay.textContent = "–";
   recognizedTextEl.textContent = "–";
   charCountEl.textContent = "0";
-  setFeedback("Eingabe geloescht.", "neutral");
+  setFeedback("Eingabe gelöscht.", "neutral");
 }
 
 function setFeedback(text, type = "neutral") {
@@ -305,13 +316,17 @@ function updateKeypadUI() {
   charCountEl.textContent = String(keypadInput.length);
 }
 
-function appendKeypadDigit(digit) {
+function appendKeypadValue(value) {
   if (!isAudioInputMode()) return;
 
-  const maxLen = expectedText.length || 4;
+  value = String(value).toUpperCase();
+
+  if (!TASK_CHARS.includes(value)) return;
+
+  const maxLen = expectedText.length || 16;
   if (keypadInput.length >= maxLen) return;
 
-  keypadInput += digit;
+  keypadInput += value;
   updateKeypadUI();
   setFeedback(`Eingabe: ${keypadInput}`, "neutral");
 }
@@ -321,7 +336,7 @@ function clearKeypadInput() {
 
   keypadInput = "";
   updateKeypadUI();
-  setFeedback("Eingabe geloescht.", "neutral");
+  setFeedback("Eingabe gelöscht.", "neutral");
 }
 
 function patternToChar(pattern) {
@@ -337,16 +352,31 @@ function randomDigit() {
 
 function randomNumberString(length) {
   let result = "";
+
   for (let i = 0; i < length; i++) {
     let digit = randomDigit();
+
     if (i === 0 && length > 1) {
-      while (digit === "0") {
-        digit = randomDigit();
-      }
+      while (digit === "0") digit = randomDigit();
     }
+
     result += digit;
   }
+
   return result;
+}
+
+function randomCoordinate() {
+  const lat = (Math.random() * 90).toFixed(3);
+  const lon = (Math.random() * 180).toFixed(3);
+
+  const ns = Math.random() < 0.5 ? "N" : "S";
+  const ew = Math.random() < 0.5 ? "E" : "W";
+
+  return {
+    display: `${lat}${ns} ${lon}${ew}`,
+    expected: `${lat}${ns}${lon}${ew}`
+  };
 }
 
 function generateSubtractionTask() {
@@ -355,89 +385,111 @@ function generateSubtractionTask() {
   const result = a - b;
 
   return {
-    text: `${a} - ${b}`,
-    answer: String(result)
+    display: `${a} - ${b}`,
+    expected: String(result)
   };
 }
 
 function configureTask() {
-  currentSubtraction = null;
-
   if (appMode === "practice_free") {
-    currentTaskLabel = "FREIES MORSEN";
     expectedText = "";
-    screenTitle.textContent = "Uebungsmodus";
-    screenInfo.textContent = "Freies Morsen mit Ziffern. Die App schreibt mit, was sie versteht.";
-    hintText.textContent = "Morse frei. Es wird nichts bewertet.";
-    statusTextEl.textContent = "Freies Ueben";
-    targetText.textContent = currentTaskLabel;
+    displayTask = "FREIES MORSEN";
+    screenTitle.textContent = "Übungsmodus";
+    screenInfo.textContent = "Freies Morsen. Die App schreibt mit, was sie versteht.";
+    hintText.textContent = "Ziffern, Punkt und N/E/S/W können gemorst werden.";
+    statusTextEl.textContent = "Freies Üben";
+    targetText.textContent = displayTask;
     return;
   }
 
   if (appMode === "practice_digit") {
     expectedText = randomDigit();
-    currentTaskLabel = expectedText;
-    screenTitle.textContent = "Uebung: Ziffer";
+    displayTask = expectedText;
+    screenTitle.textContent = "Übung: Ziffer";
     screenInfo.textContent = "Morse die gezeigte Ziffer.";
-    hintText.textContent = "Eine Ziffer morsen und dann ueberpruefen.";
-    statusTextEl.textContent = "Ziffer ueben";
-    targetText.textContent = currentTaskLabel;
+    hintText.textContent = "Eine Ziffer morsen und überprüfen.";
+    statusTextEl.textContent = "Ziffer üben";
+    targetText.textContent = displayTask;
     return;
   }
 
   if (appMode === "practice_number") {
     expectedText = randomNumberString(getNumberLength());
-    currentTaskLabel = expectedText;
-    screenTitle.textContent = "Uebung: Zahl";
+    displayTask = expectedText;
+    screenTitle.textContent = "Übung: Zahl";
     screenInfo.textContent = "Morse die gezeigte Zahl.";
-    hintText.textContent = "Die ganze Zahl morsen und dann ueberpruefen.";
-    statusTextEl.textContent = "Zahl ueben";
-    targetText.textContent = currentTaskLabel;
+    hintText.textContent = "Die ganze Zahl morsen und überprüfen.";
+    statusTextEl.textContent = "Zahl üben";
+    targetText.textContent = displayTask;
+    return;
+  }
+
+  if (appMode === "practice_coordinate") {
+    const task = randomCoordinate();
+    expectedText = task.expected;
+    displayTask = task.display;
+    screenTitle.textContent = "Übung: Koordinate";
+    screenInfo.textContent = "Morse die gezeigte Koordinate mit Punkt und Himmelsrichtung.";
+    hintText.textContent = "Leerzeichen werden nicht gemorst. Beispiel: 47.123N 8.456E wird 47.123N8.456E.";
+    statusTextEl.textContent = "Koordinate üben";
+    targetText.textContent = displayTask;
     return;
   }
 
   if (appMode === "practice_digit_audio_input") {
     expectedText = randomDigit();
-    currentTaskLabel = "?";
-    screenTitle.textContent = "Uebung: Ziffer hoeren";
-    screenInfo.textContent = "Hoere die Ziffer und gib sie unten per Zahlenfeld ein.";
-    hintText.textContent = "Mit Vorspielen kannst du die Morsefolge erneut anhoeren.";
-    statusTextEl.textContent = "Ziffer hoeren";
-    targetText.textContent = currentTaskLabel;
+    displayTask = "?";
+    screenTitle.textContent = "Übung: Ziffer hören";
+    screenInfo.textContent = "Höre die Ziffer und gib sie per Eingabefeld ein.";
+    hintText.textContent = "Mit Vorspielen kannst du erneut hören.";
+    statusTextEl.textContent = "Ziffer hören";
+    targetText.textContent = displayTask;
     return;
   }
 
   if (appMode === "practice_number_audio_input") {
     expectedText = randomNumberString(getNumberLength());
-    currentTaskLabel = "?";
-    screenTitle.textContent = "Uebung: Zahl hoeren";
-    screenInfo.textContent = "Hoere die Zahl und gib sie unten per Zahlenfeld ein.";
-    hintText.textContent = "Mit Vorspielen kannst du die Morsefolge erneut anhoeren.";
-    statusTextEl.textContent = "Zahl hoeren";
-    targetText.textContent = currentTaskLabel;
+    displayTask = "?";
+    screenTitle.textContent = "Übung: Zahl hören";
+    screenInfo.textContent = "Höre die Zahl und gib sie per Eingabefeld ein.";
+    hintText.textContent = "Mit Vorspielen kannst du erneut hören.";
+    statusTextEl.textContent = "Zahl hören";
+    targetText.textContent = displayTask;
+    return;
+  }
+
+  if (appMode === "practice_coordinate_audio_input") {
+    const task = randomCoordinate();
+    expectedText = task.expected;
+    displayTask = "?";
+    screenTitle.textContent = "Übung: Koordinate hören";
+    screenInfo.textContent = "Höre die Koordinate und gib sie mit Punkt und N/E/S/W ein.";
+    hintText.textContent = "Leerzeichen werden nicht eingegeben.";
+    statusTextEl.textContent = "Koordinate hören";
+    targetText.textContent = displayTask;
     return;
   }
 
   if (appMode === "exam_number") {
     expectedText = randomNumberString(getNumberLength());
-    currentTaskLabel = expectedText;
-    screenTitle.textContent = "Pruefung: Zahl";
+    displayTask = expectedText;
+    screenTitle.textContent = "Prüfung: Zahl";
     screenInfo.textContent = "Morse die gezeigte Zahl korrekt.";
-    hintText.textContent = "Wenn du korrekt bist, erscheint der Pruefungshinweis.";
-    statusTextEl.textContent = "Pruefung laeuft";
-    targetText.textContent = currentTaskLabel;
+    hintText.textContent = "Bei richtiger Lösung erscheint der Prüfungshinweis.";
+    statusTextEl.textContent = "Prüfung läuft";
+    targetText.textContent = displayTask;
     return;
   }
 
   if (appMode === "exam_subtraction") {
-    currentSubtraction = generateSubtractionTask();
-    expectedText = currentSubtraction.answer;
-    currentTaskLabel = currentSubtraction.text;
-    screenTitle.textContent = "Pruefung: Subtraktion";
-    screenInfo.textContent = "Loese die Rechnung im Kopf und morse das Resultat.";
-    hintText.textContent = "Wenn das Resultat stimmt, erscheint der Pruefungshinweis.";
-    statusTextEl.textContent = "Pruefung laeuft";
-    targetText.textContent = currentTaskLabel;
+    const task = generateSubtractionTask();
+    expectedText = task.expected;
+    displayTask = task.display;
+    screenTitle.textContent = "Prüfung: Subtraktion";
+    screenInfo.textContent = "Löse die Rechnung im Kopf und morse das Resultat.";
+    hintText.textContent = "Bei richtiger Lösung erscheint der Prüfungshinweis.";
+    statusTextEl.textContent = "Prüfung läuft";
+    targetText.textContent = displayTask;
   }
 }
 
@@ -467,9 +519,7 @@ function startApp() {
   ensureAudio();
 
   if (isAudioInputMode()) {
-    setTimeout(() => {
-      playTarget();
-    }, 250);
+    setTimeout(playTarget, 250);
   }
 }
 
@@ -480,9 +530,7 @@ function newTask() {
   updateInputModeUI();
 
   if (isAudioInputMode()) {
-    setTimeout(() => {
-      playTarget();
-    }, 250);
+    setTimeout(playTarget, 250);
   }
 }
 
@@ -492,6 +540,7 @@ function goBack() {
   isPressing = false;
   waitingForKeyChoice = false;
   updateMorseKeyLabels();
+
   setupScreen.classList.remove("hidden");
   appScreen.classList.add("hidden");
 }
@@ -565,10 +614,12 @@ async function playTarget() {
 
   if (appMode === "practice_free") {
     const current = recognizedChars.join("");
+
     if (!current) {
       setFeedback("Im freien Modus kann nur bereits erkannter Text vorgespielt werden.", "warning");
       return;
     }
+
     textToPlay = current;
   } else {
     textToPlay = expectedText;
@@ -639,9 +690,7 @@ function handlePressEnd() {
   const waitMs = unit * tolerance.letterPauseFactor;
 
   clearLetterTimer();
-  finalizeLetterTimer = setTimeout(() => {
-    finalizeCurrentChar();
-  }, waitMs);
+  finalizeLetterTimer = setTimeout(finalizeCurrentChar, waitMs);
 }
 
 function clearLetterTimer() {
@@ -699,18 +748,22 @@ function finishAttempt() {
   }
 
   if (recognized === expectedText) {
-    if (appMode === "practice_digit" || appMode === "practice_number") {
+    if (appMode === "practice_digit" ||
+        appMode === "practice_number" ||
+        appMode === "practice_coordinate") {
       statusTextEl.textContent = "Richtig";
-      setFeedback(`Richtig! Du hast ${expectedText} korrekt gemorst.`, "success");
+      setFeedback(`Richtig! Du hast ${displayTask} korrekt gemorst.`, "success");
       return;
     }
 
     statusTextEl.textContent = "Bestanden";
-    setFeedback("Richtig gemorst. Das Loesungswort wird gemorst: 8820", "success");
+    setFeedback("Richtig gemorst. Das Lösungswort wird gemorst: 8820", "success");
     return;
   }
 
-  if (appMode === "practice_digit" || appMode === "practice_number") {
+  if (appMode === "practice_digit" ||
+      appMode === "practice_number" ||
+      appMode === "practice_coordinate") {
     statusTextEl.textContent = "Noch nicht richtig";
     setFeedback(`Nicht ganz richtig. Erkannt wurde: ${recognized}. Gesucht war: ${expectedText}.`, "error");
     return;
@@ -725,18 +778,18 @@ function finishAudioInputAttempt() {
 
   if (!typed) {
     statusTextEl.textContent = "Keine Eingabe";
-    setFeedback("Bitte gib zuerst eine Zahl ein.", "warning");
+    setFeedback("Bitte gib zuerst eine Antwort ein.", "warning");
     return;
   }
 
   if (typed === expectedText) {
     statusTextEl.textContent = "Richtig";
     targetText.textContent = expectedText;
-    setFeedback(`Richtig! Gehoert wurde: ${expectedText}.`, "success");
+    setFeedback(`Richtig! Gehört wurde: ${expectedText}.`, "success");
   } else {
     statusTextEl.textContent = "Noch nicht richtig";
     targetText.textContent = expectedText;
-    setFeedback(`Nicht richtig. Deine Eingabe: ${typed}. Gehoert wurde: ${expectedText}.`, "error");
+    setFeedback(`Nicht richtig. Deine Eingabe: ${typed}. Gehört wurde: ${expectedText}.`, "error");
   }
 }
 
